@@ -1,6 +1,6 @@
-use axum::extract::Query;
-use axum::response::IntoResponse;
 use std::net::{Ipv4Addr, Ipv6Addr};
+
+use axum::{extract::Query, response::IntoResponse};
 
 #[derive(serde::Deserialize)]
 pub struct DestParameters {
@@ -69,7 +69,7 @@ pub async fn v6_key(params: Query<V6KeyParameters>) -> impl IntoResponse {
     let to = params.to.octets();
     let mut res: [u8; 16] = [0; 16];
     for i in 0..res.len() {
-        res[i] = to[i]^ from[i];
+        res[i] = to[i] ^ from[i];
     }
 
     Ipv6Addr::from(res).to_string()

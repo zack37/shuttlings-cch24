@@ -1,9 +1,17 @@
+mod dangerous_open_internet;
 mod ridiculous_routing;
 
-use axum::http::{header, StatusCode};
-use axum::response::IntoResponse;
-use axum::{routing::get, Router};
-use crate::ridiculous_routing::{dest, key, v6_dest, v6_key};
+use axum::{
+    http::{header, StatusCode},
+    response::IntoResponse,
+    routing::{get, post},
+    Router,
+};
+
+use crate::{
+    dangerous_open_internet::manifest,
+    ridiculous_routing::{dest, key, v6_dest, v6_key},
+};
 
 async fn hello_world() -> &'static str {
     "Hello, bird!"
@@ -20,8 +28,6 @@ async fn seek() -> impl IntoResponse {
     )
 }
 
-
-
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let router = Router::new()
@@ -30,7 +36,8 @@ async fn main() -> shuttle_axum::ShuttleAxum {
         .route("/2/dest", get(dest))
         .route("/2/key", get(key))
         .route("/2/v6/dest", get(v6_dest))
-        .route("/2/v6/key", get(v6_key));
+        .route("/2/v6/key", get(v6_key))
+        .route("/5/manifest", post(manifest));
 
     Ok(router.into())
 }

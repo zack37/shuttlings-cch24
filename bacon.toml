@@ -8,5 +8,5 @@
 default_job = "shuttle"
 
 [jobs.shuttle]
-command=["shuttle", "run"]
+command=["shuttle", "run", "--port", "8010"]
 need_stdout = false
