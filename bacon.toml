@@ -9,4 +9,6 @@ default_job = "shuttle"
 
 [jobs.shuttle]
 command=["shuttle", "run", "--port", "8010"]
-need_stdout = false
+need_stdout = true
+kill=["kill", "-s", "INT"]
+on_change_strategy = "kill_then_restart"

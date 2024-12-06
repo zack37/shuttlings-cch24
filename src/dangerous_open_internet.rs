@@ -1,4 +1,4 @@
-use std::{fmt::Formatter, str::FromStr};
+use std::str::FromStr;
 
 use axum::{
     http::{HeaderMap, StatusCode},
@@ -12,7 +12,7 @@ pub struct ValidToy {
     pub quantity: u32,
 }
 
-impl TryFrom<toml::Table> for ValidToy {
+impl TryFrom<Table> for ValidToy {
     type Error = String;
 
     fn try_from(value: Table) -> Result<Self, Self::Error> {
@@ -61,7 +61,7 @@ impl TryFrom<serde_json::Value> for ValidToy {
 }
 
 impl std::fmt::Display for ValidToy {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", &self.item, self.quantity)
     }
 }
@@ -175,6 +175,7 @@ where
 }
 
 pub async fn manifest(headers: HeaderMap, body: String) -> impl IntoResponse {
+    dbg!(&body);
     let Some(content_type) = headers.get("Content-Type") else {
         return (StatusCode::BAD_REQUEST, "Missing Content Type".to_string()).into_response();
     };
