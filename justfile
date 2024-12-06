@@ -19,4 +19,4 @@ validate exercise:
   cch24-validator -u http://localhost:8010 {{exercise}}
 
 deploy:
-    shuttle deploy --name shuttllings-cch24
+    shuttle deploy --name shuttlings-cch24
