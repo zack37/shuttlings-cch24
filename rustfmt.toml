@@ -3,4 +3,4 @@ imports_granularity = "Crate"
 reorder_impl_items = true
 group_imports = "StdExternalCrate"
 use_field_init_shorthand = true
-version = "Two"
+style_edition = "2024"

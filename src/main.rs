@@ -2,10 +2,10 @@ mod dangerous_open_internet;
 mod ridiculous_routing;
 
 use axum::{
-    http::{header, StatusCode},
+    Router,
+    http::{StatusCode, header},
     response::IntoResponse,
     routing::{get, post},
-    Router,
 };
 
 use crate::{

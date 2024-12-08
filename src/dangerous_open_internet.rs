@@ -108,55 +108,46 @@ impl IntoResponse for ManifestParseError {
     }
 }
 
-fn parse_toml(body: String) -> Result<String, ManifestParseError> {
-    if cargo_manifest::Manifest::from_str(&body).is_err() {
-        return Err(ManifestParseError::InvalidManifest);
-    };
+macro_rules! parse_manifest {
+    ($ns: ident, $body: expr) => {{
+        let raw =
+            $ns::from_str::<$ns::Value>(&$body).map_err(|_| ManifestParseError::InvalidManifest)?;
+        let toml_string = toml::to_string(&raw).map_err(|_| ManifestParseError::InvalidManifest)?;
+        cargo_manifest::Manifest::from_str(&toml_string)
+            .map_err(|_| ManifestParseError::InvalidManifest)?;
 
+        let manifest = $ns::from_value::<Manifest<$ns::Value>>(raw).unwrap();
+        parse_manifest(manifest)
+    }};
+}
+
+fn parse_toml(body: String) -> Result<String, ManifestParseError> {
+    cargo_manifest::Manifest::from_str(&body).map_err(|_| ManifestParseError::InvalidManifest)?;
     let package_manifest = toml::from_str::<Manifest<Table>>(&body).unwrap();
-    parse_manifest::<Table>(package_manifest)
+    parse_manifest(package_manifest)
 }
 
 fn parse_yaml(body: String) -> Result<String, ManifestParseError> {
-    let raw = serde_yaml::from_str::<serde_yaml::Value>(&body).unwrap();
-    let toml_string = toml::to_string(&raw).map_err(|_| ManifestParseError::InvalidManifest)?;
-    let manifest = serde_yaml::from_value::<Manifest<serde_yaml::Value>>(raw).unwrap();
-    if cargo_manifest::Manifest::from_str(&toml_string).is_err() {
-        return Err(ManifestParseError::InvalidManifest);
-    };
-
-    parse_manifest(manifest)
+    parse_manifest!(serde_yaml, body)
 }
 
 fn parse_json(body: String) -> Result<String, ManifestParseError> {
-    let raw = serde_json::from_str::<serde_json::Value>(&body)
-        .map_err(|_| ManifestParseError::InvalidManifest)?;
-    let toml_string = toml::to_string(&raw).map_err(|_| ManifestParseError::InvalidManifest)?;
-    let manifest = serde_json::from_value::<Manifest<serde_json::Value>>(raw).unwrap();
-    if cargo_manifest::Manifest::from_str(&toml_string).is_err() {
-        return Err(ManifestParseError::InvalidManifest);
-    }
-
-    parse_manifest(manifest)
+    parse_manifest!(serde_json, body)
 }
 
 fn parse_manifest<T>(manifest: Manifest<T>) -> Result<String, ManifestParseError>
 where
     ValidToy: TryFrom<T>,
 {
-    let keywords_opt = manifest.package.keywords;
-    if keywords_opt.is_none()
-        || !keywords_opt
-            .unwrap()
-            .contains(&String::from("Christmas 2024"))
-    {
-        return Err(ManifestParseError::MissingMagicKeyword);
-    }
-
-    let Some(metadata) = manifest.package.metadata else {
-        return Err(ManifestParseError::MissingOrders);
+    match manifest.package.keywords {
+        None => return Err(ManifestParseError::MissingMagicKeyword),
+        Some(k) if !k.contains(&String::from("Christmas 2024")) => {
+            return Err(ManifestParseError::MissingMagicKeyword);
+        }
+        _ => {}
     };
-    let Some(orders) = metadata.orders else {
+
+    let Some(orders) = manifest.package.metadata.and_then(|m| m.orders) else {
         return Err(ManifestParseError::MissingOrders);
     };
 
@@ -175,11 +166,7 @@ where
 }
 
 pub async fn manifest(headers: HeaderMap, body: String) -> impl IntoResponse {
-    dbg!(&body);
-    let Some(content_type) = headers.get("Content-Type") else {
-        return (StatusCode::BAD_REQUEST, "Missing Content Type".to_string()).into_response();
-    };
-    let Ok(content_type) = content_type.to_str() else {
+    let Some(content_type) = headers.get("Content-Type").and_then(|h| h.to_str().ok()) else {
         return (StatusCode::BAD_REQUEST, "Missing Content Type".to_string()).into_response();
     };
 
